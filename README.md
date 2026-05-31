@@ -12,10 +12,8 @@ OAuth 2.0 (Google) + traditional sign up / sign in built with Node.js and Expres
 PORT=
 MONGODB_URI=
 JWT_SECRET_KEY=
-SESSION_SECRET=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-GOOGLE_CALLBACK_URL=
 ```
 
 ## Routes
