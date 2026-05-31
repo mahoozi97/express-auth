@@ -25,25 +25,40 @@ const GOOGLE_OAUTH_SCOPES = [
 // - - - - - - - - - - - - - GOOGLE OAuth - - - - - - - - - - - - - -
 
 router.get("/google", async (req, res) => {
-  const state = "some_state";
+  try {
+    const state = crypto.randomBytes(16).toString("hex");
+    req.session.oauth_state = state;
 
-  // ✅ Let URLSearchParams handle all encoding automatically
-  const params = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: GOOGLE_CALLBACK_URL,
-    access_type: "offline",
-    response_type: "code",
-    state: state,
-    scope: GOOGLE_OAUTH_SCOPES.join(" "),
-    prompt: "select_account",
-  });
+    const params = new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      redirect_uri: GOOGLE_CALLBACK_URL,
+      access_type: "offline",
+      response_type: "code",
+      state: state,
+      scope: GOOGLE_OAUTH_SCOPES.join(" "),
+      prompt: "select_account",
+    });
 
-  res.redirect(`${GOOGLE_OAUTH_URL}?${params}`);
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+
+    res.redirect(googleAuthUrl);
+  } catch (error) {
+    console.error("❌ Error:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 router.get("/google/callback", async (req, res) => {
   try {
     const { code } = req.query;
+    if (!code) return res.status(400).json({ error: "Code is required" });
+
+    if (!req.query.state || req.query.state !== req.session.oauth_state) {
+      return res.status(401).json({ error: "Invalid state" });
+    }
+
+    // 2. Clear the state from the session so it can't be reused
+    delete req.session.oauth_state;
 
     // Exchange authorization code for access token & id_token
     const { data: access_token_data } = await axios.post(
