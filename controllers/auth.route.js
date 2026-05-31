@@ -1,6 +1,9 @@
 const router = require("express").Router();
 const User = require("../models/User");
 const axios = require("axios");
+const validator = require("validator");
+const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 
 const GOOGLE_OAUTH_URL = process.env.GOOGLE_OAUTH_URL;
 
@@ -19,6 +22,8 @@ const GOOGLE_OAUTH_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
 ];
 
+// - - - - - - - - - - - - - GOOGLE OAuth - - - - - - - - - - - - - -
+
 router.get("/google", async (req, res) => {
   const state = "some_state";
 
@@ -30,7 +35,7 @@ router.get("/google", async (req, res) => {
     response_type: "code",
     state: state,
     scope: GOOGLE_OAUTH_SCOPES.join(" "),
-    prompt: "select_account"
+    prompt: "select_account",
   });
 
   res.redirect(`${GOOGLE_OAUTH_URL}?${params}`);
@@ -78,6 +83,77 @@ router.get("/google/callback", async (req, res) => {
       error: "OAuth callback failed",
       details: err.response?.data || err.message,
     });
+  }
+});
+
+// - - - - - - - - - - - - - SIGN UP / SIGN IN - - - - - - - - - - - - - -
+
+router.post("/sign-up", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({ error: "Please enter a valid email" });
+    }
+
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+
+    const foundUser = await User.findOne({ email });
+
+    if (foundUser) {
+      return res.status(409).json({ error: "You already have an account." });
+    }
+
+    const createdUser = await User.create({ ...req.body });
+
+    // change to object and delete the password & cpr.
+    const {
+      password: _password,
+      cpr: _cpr,
+      ...userObject
+    } = createdUser.toObject();
+
+    console.log("✅ Signed up successfully", userObject);
+    res.status(201).json(userObject);
+  } catch (error) {
+    console.log("❌ Sign up failed. Please try again: ", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/sign-in", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!validator.isEmail(email)) {
+      return res.status(409).json({ error: "Please enter a valid email" });
+    }
+
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+
+    const foundUser = await User.findOne({ email: email });
+
+    if (!foundUser) {
+      return res.status(401).json({ error: "email or password incorrect" });
+    }
+
+    const validPassword = await bcrypt.compare(password, foundUser.password);
+
+    if (!validPassword) {
+      return res.status(401).json({ error: "email or password incorrect" });
+    }
+
+    const token = foundUser.generateToken();
+
+    console.log("✅ Signed in successfully");
+    res.status(200).json({ token });
+  } catch (error) {
+    console.log("❌ Sign in failed. Please try again: ", error);
+    res.status(500).json({ error: error.message });
   }
 });
 

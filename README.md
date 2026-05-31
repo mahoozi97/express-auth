@@ -20,8 +20,8 @@ GOOGLE_CALLBACK_URL=
 ## Routes
 | Method | Route | Description |
 |---|---|---|
-| POST | /auth/signup | Traditional sign up |
-| POST | /auth/signin | Traditional sign in |
+| POST | /auth/sign-up | Traditional sign up |
+| POST | /auth/sign-in | Traditional sign in |
 | GET | /auth/google | Google OAuth |
 | GET | /auth/google/callback | Google OAuth callback |
 

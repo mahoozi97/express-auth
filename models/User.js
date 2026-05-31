@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
-const UserSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   username: {
     type: String,
     unique: true,
@@ -23,9 +24,27 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     required: false,
   },
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user",
+  },
 });
 
-UserSchema.methods.generateToken = function () {
+userSchema.pre("save", async function (next) {
+  if (this.password) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+});
+
+userSchema.pre("findOneAndUpdate", async function () {
+  const update = this.getUpdate();
+  if (update.password) {
+    update.password = await bcrypt.hash(update.password, 10);
+  }
+});
+
+userSchema.methods.generateToken = function () {
   const { password, ...payload } = this.toObject();
   const token = jwt.sign({ ...payload }, process.env.JWT_SECRET_KEY, {
     expiresIn: process.env.JWT_LIFETIME,
@@ -33,6 +52,6 @@ UserSchema.methods.generateToken = function () {
   return token;
 };
 
-const User = mongoose.model("User", UserSchema);
+const User = mongoose.model("User", userSchema);
 
 module.exports = User;
