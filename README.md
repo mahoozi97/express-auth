@@ -37,7 +37,7 @@ npm init -y
 ### 2. Install dependencies
 
 ```bash
-npm install express mongoose dotenv morgan cors jsonwebtoken bcrypt helmet axios validator express-session
+npm install express mongoose dotenv morgan cors jsonwebtoken bcrypt helmet axios validator
 ```
 
 ### 3. Install development dependencies
