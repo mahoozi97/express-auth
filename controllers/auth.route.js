@@ -5,17 +5,13 @@ const validator = require("validator");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 
-const GOOGLE_OAUTH_URL = process.env.GOOGLE_OAUTH_URL;
-
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
-const GOOGLE_ACCESS_TOKEN_URL = process.env.GOOGLE_ACCESS_TOKEN_URL;
-
-const GOOGLE_TOKEN_INFO_URL = process.env.GOOGLE_TOKEN_INFO_URL;
-
-const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL;
+const GOOGLE_OAUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+const GOOGLE_ACCESS_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";
+const GOOGLE_CALLBACK_URL = "http://localhost:3000/auth/google/callback";
 
 const GOOGLE_OAUTH_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.email",
@@ -114,10 +110,7 @@ router.post("/sign-up", async (req, res) => {
     const createdUser = await User.create({ username, email, password });
 
     // change to object and delete the password
-    const {
-      password: _password,
-      ...userObject
-    } = createdUser.toObject();
+    const { password: _password, ...userObject } = createdUser.toObject();
 
     console.log("✅ Signed up successfully", userObject);
     res.status(201).json(userObject);
