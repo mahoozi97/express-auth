@@ -46,19 +46,19 @@ router.get("/google/callback", async (req, res) => {
     const { code } = req.query;
     if (!code) return res.status(400).json({ error: "Code is required" });
 
-    // Exchange authorization code for access token & id_token
+    // Pack the credentials neatly into one object
+    const authData = {
+      code,
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: GOOGLE_CALLBACK_URL,
+      grant_type: "authorization_code",
+    };
+
+    // Exchange authorization code for access token in a clean, single line
     const { data: access_token_data } = await axios.post(
       GOOGLE_ACCESS_TOKEN_URL,
-      new URLSearchParams({
-        code,
-        client_id: GOOGLE_CLIENT_ID,
-        client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: GOOGLE_CALLBACK_URL,
-        grant_type: "authorization_code",
-      }),
-      {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      },
+      new URLSearchParams(authData),
     );
 
     const { id_token } = access_token_data;
