@@ -1,5 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const morgan = require("morgan");
+const helmet = require("helmet");
+const cors = require("cors");
 
 require("dotenv").config();
 const PORT = process.env.PORT;
@@ -9,7 +12,9 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const authRoutes = require("./controllers/auth.route");
 
 const app = express();
+app.use(helmet());
 app.use(express.json());
+app.use(morgan("dev"));
 // app.use(cors({ origin: "http://localhost:5173" }));
 
 // Routes
