@@ -68,7 +68,7 @@ router.get("/google/callback", async (req, res) => {
     const { id_token } = access_token_data;
 
     // Verify id_token and get user info
-    const { data: token_info_data, status } = await axios.get(
+    const { data: token_info_data } = await axios.get(
       `${GOOGLE_TOKEN_INFO_URL}?id_token=${id_token}`,
     );
 
@@ -113,10 +113,9 @@ router.post("/sign-up", async (req, res) => {
 
     const createdUser = await User.create({ username, email, password });
 
-    // change to object and delete the password & cpr.
+    // change to object and delete the password
     const {
       password: _password,
-      cpr: _cpr,
       ...userObject
     } = createdUser.toObject();
 
