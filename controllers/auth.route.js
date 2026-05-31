@@ -54,7 +54,7 @@ router.get("/google/callback", async (req, res) => {
     if (!code) return res.status(400).json({ error: "Code is required" });
 
     if (!req.query.state || req.query.state !== req.session.oauth_state) {
-      return res.status(401).json({ error: "Invalid state" });
+      return res.status(400).json({ error: "Invalid state" });
     }
 
     // 2. Clear the state from the session so it can't be reused
@@ -105,7 +105,7 @@ router.get("/google/callback", async (req, res) => {
 
 router.post("/sign-up", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, username } = req.body;
 
     if (!validator.isEmail(email)) {
       return res.status(400).json({ error: "Please enter a valid email" });
@@ -121,7 +121,7 @@ router.post("/sign-up", async (req, res) => {
       return res.status(409).json({ error: "You already have an account." });
     }
 
-    const createdUser = await User.create({ ...req.body });
+    const createdUser = await User.create({ username, email, password });
 
     // change to object and delete the password & cpr.
     const {
@@ -143,7 +143,7 @@ router.post("/sign-in", async (req, res) => {
     const { email, password } = req.body;
 
     if (!validator.isEmail(email)) {
-      return res.status(409).json({ error: "Please enter a valid email" });
+      return res.status(400).json({ error: "Please enter a valid email" });
     }
 
     if (!password) {
@@ -153,7 +153,7 @@ router.post("/sign-in", async (req, res) => {
     const foundUser = await User.findOne({ email: email });
 
     if (!foundUser) {
-      return res.status(401).json({ error: "email or password incorrect" });
+      return res.status(400).json({ error: "email or password incorrect" });
     }
 
     const validPassword = await bcrypt.compare(password, foundUser.password);
