@@ -2,38 +2,55 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
-const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    unique: true,
-    trim: true,
-    required: [true, "Please provide a username"],
-    minlength: 3,
-    maxlength: 56,
+const userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      unique: true,
+      trim: true,
+      required: [true, "Please provide a username"],
+      minlength: 3,
+      maxlength: 56,
+    },
+    email: {
+      type: String,
+      match: [
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+        "Please provide a valid email.",
+      ],
+      unique: true,
+    },
+    password: {
+      type: String,
+      minlength: 6,
+      required: false,
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+    },
+    verificationExpires: {
+      type: Date,
+    },
   },
-  email: {
-    type: String,
-    match: [
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-      "Please provide a valid email.",
-    ],
-    unique: true,
-  },
-  password: {
-    type: String,
-    minlength: 6,
-    required: false,
-  },
-  role: {
-    type: String,
-    enum: ["user", "admin"],
-    default: "user",
-  },
-});
+  { timestamps: true },
+);
 
 userSchema.pre("save", async function (next) {
   if (this.password) {
     this.password = await bcrypt.hash(this.password, 10);
+  }
+
+  if (this.verificationToken) {
+    this.verificationToken = await bcrypt.hash(this.verificationToken, 10);
   }
 });
 
@@ -44,10 +61,23 @@ userSchema.pre("findOneAndUpdate", async function () {
   }
 });
 
-userSchema.methods.generateToken = function () {
-  const { password, ...payload } = this.toObject();
+userSchema.methods.generateToken = function (lifeTime, purpose = "access") {
+  // All tokens need the User ID and token type
+  const payload = {
+    _id: this._id,
+    purpose,
+  };
+
+  // Sign-in tokens also need basic profile data for the frontend
+  if (purpose === "access") {
+    payload.role = this.role;
+    payload.username = this.username;
+    payload.email = this.email;
+    payload.isVerified = this.isVerified;
+  }
+
   const token = jwt.sign({ ...payload }, process.env.JWT_SECRET_KEY, {
-    expiresIn: process.env.JWT_LIFETIME,
+    expiresIn: lifeTime || process.env.JWT_LIFETIME,
   });
   return token;
 };

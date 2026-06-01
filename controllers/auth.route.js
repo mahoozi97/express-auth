@@ -4,6 +4,7 @@ const axios = require("axios");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const sendEmailVerification = require("../utils/mailer");
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -108,6 +109,13 @@ router.post("/sign-up", async (req, res) => {
     }
 
     const createdUser = await User.create({ username, email, password });
+
+    // email verification
+    const token = createdUser.generateToken("10m", "email-verification");
+    createdUser.verificationToken = token;
+    createdUser.verificationExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await createdUser.save();
+    sendEmailVerification(createdUser.email, token);
 
     // change to object and delete the password
     const { password: _password, ...userObject } = createdUser.toObject();

@@ -1,6 +1,7 @@
 // https://www.w3schools.com/nodejs/nodejs_email.asp
 
 const nodemailer = require("nodemailer");
+const jwt = require("jsonwebtoken");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -11,15 +12,14 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmailVerification = (to, token) => {
+  const verificationUrl = `http://localhost:3000/auth/verify/${token}`;
   const mailOptions = {
     from: process.env.EMAIL,
     to: to,
     subject: "Email Verification",
-    text: `Hi! There, You have recently visited 
-           our website and entered your email.
-           Please follow the given link to verify your email
-           http://localhost:3000/auth/verify/${token} 
-           Thanks`,
+    html: `<h2>Welcome to the app!</h2>
+  <p>Please click the link below to verify your email address:</p>
+  <a href="${verificationUrl}">Click here to verify your email</a>`,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
