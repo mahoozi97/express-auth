@@ -14,11 +14,8 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      match: [
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-        "Please provide a valid email.",
-      ],
       unique: true,
+      required: [true, "Please provide an email"],
     },
     password: {
       type: String,
@@ -34,12 +31,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    verificationToken: {
-      type: String,
-    },
-    verificationExpires: {
-      type: Date,
-    },
   },
   { timestamps: true },
 );
@@ -47,10 +38,6 @@ const userSchema = new mongoose.Schema(
 userSchema.pre("save", async function (next) {
   if (this.password) {
     this.password = await bcrypt.hash(this.password, 10);
-  }
-
-  if (this.verificationToken) {
-    this.verificationToken = await bcrypt.hash(this.verificationToken, 10);
   }
 });
 

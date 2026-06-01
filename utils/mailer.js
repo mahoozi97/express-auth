@@ -1,7 +1,6 @@
 // https://www.w3schools.com/nodejs/nodejs_email.asp
 
 const nodemailer = require("nodemailer");
-const jwt = require("jsonwebtoken");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
