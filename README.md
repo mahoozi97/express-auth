@@ -1,12 +1,9 @@
 # express-auth
-
 OAuth 2.0 (Google) + traditional sign up / sign in built with Node.js and Express.
-
 ## Features
 - Google OAuth 2.0
 - Traditional sign up / sign in
 - JWT authentication
-
 ## Environment Variables
 ```env
 PORT=
@@ -15,7 +12,6 @@ JWT_SECRET_KEY=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```
-
 ## Routes
 | Method | Route | Description |
 |---|---|---|
@@ -23,23 +19,12 @@ GOOGLE_CLIENT_SECRET=
 | POST | /auth/sign-in | Traditional sign in |
 | GET | /auth/google | Google OAuth |
 | GET | /auth/google/callback | Google OAuth callback |
-
 ## Project Setup
-
-### 1. Initialize npm
-
+### 1. Clone the repository
 ```bash
-npm init -y
+git clone https://github.com/mahoozi97/express-auth
 ```
-
 ### 2. Install dependencies
-
 ```bash
-npm install express mongoose dotenv morgan cors jsonwebtoken bcrypt helmet axios validator
-```
-
-### 3. Install development dependencies
-
-```bash
-npm install nodemon --save-dev
+npm i
 ```
