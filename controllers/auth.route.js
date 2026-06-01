@@ -74,6 +74,8 @@ router.get("/google/callback", async (req, res) => {
     let user = await User.findOne({ email }).select("-password");
     if (!user) {
       user = await User.create({ email, username: name });
+      user.isVerified = true;
+      await user.save();
     }
 
     const token = user.generateToken();
