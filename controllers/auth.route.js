@@ -82,6 +82,7 @@ router.get("/google/callback", async (req, res) => {
     if (!user) {
       user = await User.create({ email, username: name });
       user.isVerified = true;
+      user.authProvider = "google";
       await user.save();
     }
 
@@ -248,12 +249,23 @@ router.post("/2fa/generate", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    if (user.authProvider === "google") {
+      return res.status(400).json({ error: "2FA is managed by Google." });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        error:
+          "Please verify your email before enabling Two-Factor Authentication",
+      });
+    }
+
     // 1. Generate the raw secret
     const secret = generateSecret();
     user.sharedSecret = encryptSecret(secret);
     await user.save();
 
-    // 3. Generate a QR code for the secret
+    // Generate a QR code for the secret
     const otpauth = generateURI({
       label: user.email,
       issuer: "express-auth app",
@@ -261,11 +273,12 @@ router.post("/2fa/generate", verifyToken, async (req, res) => {
     });
     const qrCodeUrl = await QRCode.toDataURL(otpauth);
 
-    console.log("✅ 2FA generated successfully")
+    console.log("✅ 2FA generated successfully");
     res.status(200).json({ qrCodeUrl });
   } catch (error) {
     console.log("❌ Generate 2FA falied: ", error);
     res.status(500).json({ error: error.message });
   }
 });
+
 module.exports = router;

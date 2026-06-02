@@ -38,6 +38,11 @@ const userSchema = new mongoose.Schema(
     sharedSecret: {
       type: String,
     },
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
   },
   { timestamps: true },
 );
