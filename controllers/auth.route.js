@@ -218,7 +218,7 @@ router.post("/sign-in", authLimiter, async (req, res) => {
     }
 
     if (foundUser.is2FAEnabled) {
-      const tempToken = foundUser.generateToken("5m", "2fa_partial");
+      const tempToken = foundUser.generateToken("5m", "2fa");
 
       return res.status(200).json({
         requires2FA: true,
@@ -298,7 +298,7 @@ router.post("/2fa/verify-setup", verifyToken, async (req, res) => {
     }
 
     if (user.is2FAEnabled) {
-      return res.status(400).json({ error: "2FA already enabled " });
+      return res.status(400).json({ error: "2FA already enabled" });
     }
 
     // Decrypt the secret from the database
@@ -317,6 +317,83 @@ router.post("/2fa/verify-setup", verifyToken, async (req, res) => {
     res.status(200).json({ message: "2FA successfully enabled!" });
   } catch (error) {
     console.log("❌ Failed to enable 2FA: ", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/2fa/verify-login", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { passcode } = req.body;
+
+    if (!passcode || passcode.length !== 6) {
+      return res
+        .status(400)
+        .json({ error: "Please enter a valid 6-digit passcode" });
+    }
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user || !user.sharedSecret) {
+      return res.status(400).json({ error: "2FA generation required first" });
+    }
+    // Decrypt the secret from the database
+    const decryptedSecret = decryptSecret(user.sharedSecret);
+
+    // Validate the 6-digit code against the decrypted secret
+    const result = await verify({ secret: decryptedSecret, token: passcode });
+
+    if (!result.valid) {
+      return res.status(400).json({ error: "Invalid 2FA code" });
+    }
+
+    const token = user.generateToken();
+
+    console.log("✅ 2FA verified successfully");
+    res.status(200).json({ token });
+  } catch (error) {
+    console.log("❌ 2FA verification failed: ", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/2fa/verify-disable", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { passcode } = req.body;
+
+    if (!passcode || passcode.length !== 6) {
+      return res
+        .status(400)
+        .json({ error: "Please enter a valid 6-digit passcode" });
+    }
+    const user = await User.findById(userId).select("-password");
+
+    if (!user || !user.sharedSecret) {
+      return res.status(400).json({ error: "2FA generation required first" });
+    }
+
+    if (!user.is2FAEnabled) {
+      return res.status(400).json({ error: "2FA is already disabled." });
+    }
+
+    // Decrypt the secret from the database
+    const decryptedSecret = decryptSecret(user.sharedSecret);
+
+    // Validate the 6-digit code against the decrypted secret
+    const result = await verify({ secret: decryptedSecret, token: passcode });
+
+    if (!result.valid) {
+      return res.status(400).json({ error: "Invalid 2FA code" });
+    }
+
+    user.is2FAEnabled = false;
+    user.sharedSecret = null;
+    await user.save();
+    console.log("✅ 2FA successfully disabled!");
+    res.status(200).json({ message: "2FA successfully disabled!" });
+  } catch (error) {
+    console.log("❌ Failed to disable 2FA: ", error);
     res.status(500).json({ error: error.message });
   }
 });
