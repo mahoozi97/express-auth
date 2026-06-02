@@ -261,7 +261,7 @@ router.post("/2fa/generate", verifyToken, async (req, res) => {
     });
     const qrCodeUrl = await QRCode.toDataURL(otpauth);
 
-    // Send the QR code as a URL in the response, and the raw secret for manual Postman testing
+    console.log("✅ 2FA QR Code Url generated successfully")
     res.status(200).json({ qrCodeUrl });
   } catch (error) {
     console.log("❌ Generate 2FA QR code falied: ", error);
