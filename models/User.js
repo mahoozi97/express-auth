@@ -31,6 +31,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    is2FAEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    sharedSecret: {
+      type: String,
+    },
   },
   { timestamps: true },
 );
