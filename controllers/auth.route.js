@@ -256,7 +256,7 @@ router.post("/2fa/generate", verifyToken, async (req, res) => {
     // 3. Generate a QR code for the secret
     const otpauth = generateURI({
       label: user.email,
-      issuer: "MyApp express-auth",
+      issuer: "express-auth app",
       secret: secret,
     });
     const qrCodeUrl = await QRCode.toDataURL(otpauth);
