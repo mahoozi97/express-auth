@@ -4,6 +4,10 @@ const axios = require("axios");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const sendEmailVerification = require("../utils/mailer");
+const jwt = require("jsonwebtoken");
+const verifyToken = require("../middleware/verifyToken");
+const authLimiter = require("../middleware/limiter");
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -73,6 +77,8 @@ router.get("/google/callback", async (req, res) => {
     let user = await User.findOne({ email }).select("-password");
     if (!user) {
       user = await User.create({ email, username: name });
+      user.isVerified = true;
+      await user.save();
     }
 
     const token = user.generateToken();
@@ -89,7 +95,7 @@ router.get("/google/callback", async (req, res) => {
 
 // - - - - - - - - - - - - - SIGN UP / SIGN IN - - - - - - - - - - - - - -
 
-router.post("/sign-up", async (req, res) => {
+router.post("/sign-up", authLimiter, async (req, res) => {
   try {
     const { email, password, username } = req.body;
 
@@ -109,6 +115,10 @@ router.post("/sign-up", async (req, res) => {
 
     const createdUser = await User.create({ username, email, password });
 
+    // email verification
+    const token = createdUser.generateToken("10m", "email-verification");
+    sendEmailVerification(createdUser.email, token);
+
     // change to object and delete the password
     const { password: _password, ...userObject } = createdUser.toObject();
 
@@ -120,7 +130,65 @@ router.post("/sign-up", async (req, res) => {
   }
 });
 
-router.post("/sign-in", async (req, res) => {
+// Verify Email Address
+router.post("/verify/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    const user = await User.findById(decoded._id).select("-password");
+    if (!user) {
+      return res.status(404).json({ error: "User no longer exists." });
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    console.log("✅ Email verified successfully!");
+    res.json({ success: true, message: "Email verified successfully!" });
+  } catch (error) {
+    console.error("❌ Failed or jwt expired: ", error);
+    res
+      .status(400)
+      .json({ success: false, error: "Link is invalid or has expired." });
+  }
+});
+
+// Resend Verification Email
+router.post(
+  "/resend-verification",
+  verifyToken,
+  authLimiter,
+  async (req, res) => {
+    try {
+      const userId = req.user._id;
+
+      const foundUser = await User.findById(userId).select("-password");
+
+      if (!foundUser) {
+        return res.status(404).json({ error: "User no longer exists." });
+      }
+
+      if (foundUser.isVerified) {
+        return res
+          .status(400)
+          .json({ error: "Your user is already verified." });
+      }
+
+      const token = foundUser.generateToken("10m", "email-verification");
+      sendEmailVerification(foundUser.email, token);
+
+      console.log("✅ Email verification sent successfully");
+      res.status(200).json({ message: "Email verification sent successfully" });
+    } catch (error) {
+      console.log("❌ Send email verification failed: ", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+);
+
+router.post("/sign-in", authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
