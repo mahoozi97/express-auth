@@ -9,6 +9,10 @@ const jwt = require("jsonwebtoken");
 const verifyToken = require("../middleware/verifyToken");
 const authLimiter = require("../middleware/limiter");
 
+const { generateSecret, generateURI } = require("otplib");
+const QRCode = require("qrcode");
+const { encryptSecret, decryptSecret } = require("../utils/helper");
+
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
@@ -212,6 +216,16 @@ router.post("/sign-in", authLimiter, async (req, res) => {
       return res.status(401).json({ error: "email or password incorrect" });
     }
 
+    if (foundUser.is2FAEnabled) {
+      const tempToken = foundUsergenerateToken("5m", "2fa_partial");
+
+      return res.status(200).json({
+        requires2FA: true,
+        message: "Please submit your 6-digit code.",
+        tempToken: tempToken,
+      });
+    }
+
     const token = foundUser.generateToken();
 
     console.log("✅ Signed in successfully");
@@ -222,4 +236,36 @@ router.post("/sign-in", authLimiter, async (req, res) => {
   }
 });
 
+//  - - - - - - - -  - - - -- - 2FA AUTHENTICATION - - - - - - - - -  -- - - - - -
+
+router.post("/2fa/generate", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // 1. Generate the raw secret
+    const secret = generateSecret();
+    user.sharedSecret = encryptSecret(secret);
+    await user.save();
+
+    // 3. Generate a QR code for the secret
+    const otpauth = generateURI({
+      label: user.email,
+      issuer: "MyApp express-auth",
+      secret: secret,
+    });
+    const qrCodeUrl = await QRCode.toDataURL(otpauth);
+
+    // Send the QR code as a URL in the response, and the raw secret for manual Postman testing
+    res.status(200).json({ qrCodeUrl });
+  } catch (error) {
+    console.log("❌ Generate 2FA QR code falied: ", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 module.exports = router;
