@@ -4,10 +4,11 @@ const verifyToken = require("../../middleware/verifyToken");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 const sendEmailVerification = require("../../utils/mailer");
+const authLimiter = require("../../middleware/limiter");
 
 // - - - - - - - - - - - - - SIGN UP / SIGN IN - - - - - - - - - - - - - -
 
-router.post("/sign-up", async (req, res) => {
+router.post("/sign-up", authLimiter(), async (req, res) => {
   try {
     const { email, password, username } = req.body;
 
@@ -42,7 +43,7 @@ router.post("/sign-up", async (req, res) => {
   }
 });
 
-router.post("/sign-in", async (req, res) => {
+router.post("/sign-in", authLimiter(), async (req, res) => {
   try {
     const { email, password } = req.body;
 
