@@ -67,7 +67,7 @@ router.post("/sign-in", authLimiter, async (req, res) => {
       return res.status(401).json({ error: "email or password incorrect" });
     }
 
-    if (foundUser.is2FAEnabled) {
+    if (foundUser.is2FaEnabled) {
       const tempToken = foundUser.generateToken("5m", "2fa");
 
       return res.status(200).json({

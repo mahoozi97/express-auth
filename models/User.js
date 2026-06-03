@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    is2FAEnabled: {
+    is2FaEnabled: {
       type: Boolean,
       default: false,
     },

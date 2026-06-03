@@ -67,7 +67,7 @@ router.post("/2fa/verify-setup", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "2FA generation required first" });
     }
 
-    if (user.is2FAEnabled) {
+    if (user.is2FaEnabled) {
       return res.status(400).json({ error: "2FA already enabled" });
     }
 
@@ -81,7 +81,7 @@ router.post("/2fa/verify-setup", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "Invalid 2FA code" });
     }
 
-    user.is2FAEnabled = true;
+    user.is2FaEnabled = true;
     await user.save();
     console.log("✅ 2FA successfully enabled!");
     res.status(200).json({ message: "2FA successfully enabled!" });
@@ -116,7 +116,7 @@ router.post("/2fa/verify-login", verifyToken, async (req, res) => {
     if (!result.valid) {
       return res.status(400).json({ error: "Invalid 2FA code" });
     }
-    
+
     const token = user.generateToken();
 
     console.log("✅ 2FA verified successfully");
@@ -143,7 +143,7 @@ router.post("/2fa/verify-disable", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "2FA generation required first" });
     }
 
-    if (!user.is2FAEnabled) {
+    if (!user.is2FaEnabled) {
       return res.status(400).json({ error: "2FA is already disabled." });
     }
 
@@ -157,7 +157,7 @@ router.post("/2fa/verify-disable", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "Invalid 2FA code" });
     }
 
-    user.is2FAEnabled = false;
+    user.is2FaEnabled = false;
     user.sharedSecret = null;
     await user.save();
     console.log("✅ 2FA successfully disabled!");

@@ -34,8 +34,14 @@ const verifyToken = (req, res, next) => {
       });
     }
 
+    // reject temporrary tokens carrying a role
+    if (user.purpose !== "access" && user.role) {
+      return res.status(403).json({ message: "Token conflict." });
+    }
+
+    // reject access tokens missing their role
     if (user.purpose === "access" && !user.role) {
-      return res.status(403).json({ message: "Access Denied." });
+      return res.status(403).json({ message: "Token incomplete." });
     }
 
     req.user = user;

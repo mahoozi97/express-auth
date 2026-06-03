@@ -13,13 +13,6 @@
 // const QRCode = require("qrcode");
 // const { encryptSecret, decryptSecret } = require("../utils/helper");
 
-
-
-
-
-
-
-
 // //  - - - - - - - -  - - - -- - 2FA AUTHENTICATION - - - - - - - - -  -- - - - - -
 
 // router.post("/2fa/generate", verifyToken, async (req, res) => {
@@ -80,7 +73,7 @@
 //       return res.status(400).json({ error: "2FA generation required first" });
 //     }
 
-//     if (user.is2FAEnabled) {
+//     if (user.is2FaEnabled) {
 //       return res.status(400).json({ error: "2FA already enabled" });
 //     }
 
@@ -94,7 +87,7 @@
 //       return res.status(400).json({ error: "Invalid 2FA code" });
 //     }
 
-//     user.is2FAEnabled = true;
+//     user.is2FaEnabled = true;
 //     await user.save();
 //     console.log("✅ 2FA successfully enabled!");
 //     res.status(200).json({ message: "2FA successfully enabled!" });
@@ -156,7 +149,7 @@
 //       return res.status(400).json({ error: "2FA generation required first" });
 //     }
 
-//     if (!user.is2FAEnabled) {
+//     if (!user.is2FaEnabled) {
 //       return res.status(400).json({ error: "2FA is already disabled." });
 //     }
 
@@ -170,7 +163,7 @@
 //       return res.status(400).json({ error: "Invalid 2FA code" });
 //     }
 
-//     user.is2FAEnabled = false;
+//     user.is2FaEnabled = false;
 //     user.sharedSecret = null;
 //     await user.save();
 //     console.log("✅ 2FA successfully disabled!");
