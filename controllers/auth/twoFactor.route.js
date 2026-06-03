@@ -19,6 +19,12 @@ router.post("/2fa/generate", verifyToken, authLimiter(), async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    if (user.sharedSecret) {
+      return res
+        .status(400)
+        .json({ error: "2FA is already configured for this user." });
+    }
+
     if (user.authProvider === "google") {
       return res.status(400).json({ error: "2FA is managed by Google." });
     }
