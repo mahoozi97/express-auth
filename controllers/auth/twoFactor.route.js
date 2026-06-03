@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const User = require("../../models/User");
 const verifyToken = require("../../middleware/verifyToken");
-// const authLimiter = require("../../middleware/limiter");
+const authLimiter = require("../../middleware/limiter");
 
 const { generateSecret, generateURI, verify } = require("otplib");
 const QRCode = require("qrcode");
@@ -9,7 +9,7 @@ const { encryptSecret, decryptSecret } = require("../../utils/helper");
 
 //  - - - - - - - -  - - - -- - 2FA AUTHENTICATION - - - - - - - - -  -- - - - - -
 
-router.post("/2fa/generate", verifyToken, async (req, res) => {
+router.post("/2fa/generate", verifyToken, authLimiter(), async (req, res) => {
   try {
     const userId = req.user._id;
 
@@ -51,121 +51,136 @@ router.post("/2fa/generate", verifyToken, async (req, res) => {
   }
 });
 
-router.post("/2fa/verify-setup", verifyToken, async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { passcode } = req.body;
+router.post(
+  "/2fa/verify-setup",
+  verifyToken,
+  authLimiter(),
+  async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const { passcode } = req.body;
 
-    if (!passcode || passcode.length !== 6) {
-      return res
-        .status(400)
-        .json({ error: "Please enter a valid 6-digit passcode" });
+      if (!passcode || passcode.length !== 6) {
+        return res
+          .status(400)
+          .json({ error: "Please enter a valid 6-digit passcode" });
+      }
+      const user = await User.findById(userId).select("-password");
+
+      if (!user || !user.sharedSecret) {
+        return res.status(400).json({ error: "2FA generation required first" });
+      }
+
+      if (user.is2FaEnabled) {
+        return res.status(400).json({ error: "2FA already enabled" });
+      }
+
+      // Decrypt the secret from the database
+      const decryptedSecret = decryptSecret(user.sharedSecret);
+
+      // Validate the 6-digit code against the decrypted secret
+      const result = await verify({ secret: decryptedSecret, token: passcode });
+
+      if (!result.valid) {
+        return res.status(400).json({ error: "Invalid 2FA code" });
+      }
+
+      user.is2FaEnabled = true;
+      await user.save();
+      console.log("✅ 2FA successfully enabled!");
+      res.status(200).json({ message: "2FA successfully enabled!" });
+    } catch (error) {
+      console.log("❌ Failed to enable 2FA: ", error);
+      res.status(500).json({ error: error.message });
     }
-    const user = await User.findById(userId).select("-password");
+  },
+);
 
-    if (!user || !user.sharedSecret) {
-      return res.status(400).json({ error: "2FA generation required first" });
+router.post(
+  "/2fa/verify-login",
+  verifyToken,
+  authLimiter(),
+  async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const { passcode } = req.body;
+
+      if (!passcode || passcode.length !== 6) {
+        return res
+          .status(400)
+          .json({ error: "Please enter a valid 6-digit passcode" });
+      }
+
+      const user = await User.findById(userId).select("-password");
+
+      if (!user || !user.sharedSecret) {
+        return res.status(400).json({ error: "2FA generation required first" });
+      }
+      // Decrypt the secret from the database
+      const decryptedSecret = decryptSecret(user.sharedSecret);
+
+      // Validate the 6-digit code against the decrypted secret
+      const result = await verify({ secret: decryptedSecret, token: passcode });
+
+      if (!result.valid) {
+        return res.status(400).json({ error: "Invalid 2FA code" });
+      }
+
+      const token = user.generateToken();
+
+      console.log("✅ 2FA verified successfully");
+      res.status(200).json({ token });
+    } catch (error) {
+      console.log("❌ 2FA verification failed: ", error);
+      res.status(500).json({ error: error.message });
     }
+  },
+);
 
-    if (user.is2FaEnabled) {
-      return res.status(400).json({ error: "2FA already enabled" });
+router.post(
+  "/2fa/verify-disable",
+  verifyToken,
+  authLimiter(),
+  async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const { passcode } = req.body;
+
+      if (!passcode || passcode.length !== 6) {
+        return res
+          .status(400)
+          .json({ error: "Please enter a valid 6-digit passcode" });
+      }
+      const user = await User.findById(userId).select("-password");
+
+      if (!user || !user.sharedSecret) {
+        return res.status(400).json({ error: "2FA generation required first" });
+      }
+
+      if (!user.is2FaEnabled) {
+        return res.status(400).json({ error: "2FA is already disabled." });
+      }
+
+      // Decrypt the secret from the database
+      const decryptedSecret = decryptSecret(user.sharedSecret);
+
+      // Validate the 6-digit code against the decrypted secret
+      const result = await verify({ secret: decryptedSecret, token: passcode });
+
+      if (!result.valid) {
+        return res.status(400).json({ error: "Invalid 2FA code" });
+      }
+
+      user.is2FaEnabled = false;
+      user.sharedSecret = null;
+      await user.save();
+      console.log("✅ 2FA successfully disabled!");
+      res.status(200).json({ message: "2FA successfully disabled!" });
+    } catch (error) {
+      console.log("❌ Failed to disable 2FA: ", error);
+      res.status(500).json({ error: error.message });
     }
-
-    // Decrypt the secret from the database
-    const decryptedSecret = decryptSecret(user.sharedSecret);
-
-    // Validate the 6-digit code against the decrypted secret
-    const result = await verify({ secret: decryptedSecret, token: passcode });
-
-    if (!result.valid) {
-      return res.status(400).json({ error: "Invalid 2FA code" });
-    }
-
-    user.is2FaEnabled = true;
-    await user.save();
-    console.log("✅ 2FA successfully enabled!");
-    res.status(200).json({ message: "2FA successfully enabled!" });
-  } catch (error) {
-    console.log("❌ Failed to enable 2FA: ", error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.post("/2fa/verify-login", verifyToken, async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { passcode } = req.body;
-
-    if (!passcode || passcode.length !== 6) {
-      return res
-        .status(400)
-        .json({ error: "Please enter a valid 6-digit passcode" });
-    }
-
-    const user = await User.findById(userId).select("-password");
-
-    if (!user || !user.sharedSecret) {
-      return res.status(400).json({ error: "2FA generation required first" });
-    }
-    // Decrypt the secret from the database
-    const decryptedSecret = decryptSecret(user.sharedSecret);
-
-    // Validate the 6-digit code against the decrypted secret
-    const result = await verify({ secret: decryptedSecret, token: passcode });
-
-    if (!result.valid) {
-      return res.status(400).json({ error: "Invalid 2FA code" });
-    }
-
-    const token = user.generateToken();
-
-    console.log("✅ 2FA verified successfully");
-    res.status(200).json({ token });
-  } catch (error) {
-    console.log("❌ 2FA verification failed: ", error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.post("/2fa/verify-disable", verifyToken, async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { passcode } = req.body;
-
-    if (!passcode || passcode.length !== 6) {
-      return res
-        .status(400)
-        .json({ error: "Please enter a valid 6-digit passcode" });
-    }
-    const user = await User.findById(userId).select("-password");
-
-    if (!user || !user.sharedSecret) {
-      return res.status(400).json({ error: "2FA generation required first" });
-    }
-
-    if (!user.is2FaEnabled) {
-      return res.status(400).json({ error: "2FA is already disabled." });
-    }
-
-    // Decrypt the secret from the database
-    const decryptedSecret = decryptSecret(user.sharedSecret);
-
-    // Validate the 6-digit code against the decrypted secret
-    const result = await verify({ secret: decryptedSecret, token: passcode });
-
-    if (!result.valid) {
-      return res.status(400).json({ error: "Invalid 2FA code" });
-    }
-
-    user.is2FaEnabled = false;
-    user.sharedSecret = null;
-    await user.save();
-    console.log("✅ 2FA successfully disabled!");
-    res.status(200).json({ message: "2FA successfully disabled!" });
-  } catch (error) {
-    console.log("❌ Failed to disable 2FA: ", error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  },
+);
 
 module.exports = router;
