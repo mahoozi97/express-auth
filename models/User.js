@@ -31,6 +31,18 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    is2FaEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    sharedSecret: {
+      type: String,
+    },
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
   },
   { timestamps: true },
 );

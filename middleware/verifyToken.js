@@ -12,6 +12,9 @@ const verifyToken = (req, res, next) => {
     return next();
   }
 
+  const is2FaRoute = req.path.endsWith("/2fa/verify-login");
+  console.log(is2FaRoute);
+
   const token = req.headers["authorization"]?.split(" ")[1];
 
   if (!token) {
@@ -24,6 +27,23 @@ const verifyToken = (req, res, next) => {
     if (err) {
       return res.status(403).json({ message: "Invalid credientials" });
     }
+
+    if (user.purpose === "2fa" && !is2FaRoute) {
+      return res.status(403).json({
+        message: "Access Denied. Please complete your 2FA verification first.",
+      });
+    }
+
+    // reject temporrary tokens carrying a role
+    if (user.purpose !== "access" && user.role) {
+      return res.status(403).json({ message: "Token conflict." });
+    }
+
+    // reject access tokens missing their role
+    if (user.purpose === "access" && !user.role) {
+      return res.status(403).json({ message: "Token incomplete." });
+    }
+
     req.user = user;
     next();
   });

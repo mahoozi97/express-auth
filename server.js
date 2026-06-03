@@ -9,7 +9,7 @@ const PORT = process.env.PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // import routes
-const authRoutes = require("./controllers/auth.route");
+const authRoutes = require("./controllers/auth/auth");
 
 const app = express();
 app.use(helmet());
