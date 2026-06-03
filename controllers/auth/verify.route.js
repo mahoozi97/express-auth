@@ -6,7 +6,7 @@ const verifyToken = require("../../middleware/verifyToken");
 const authLimiter = require("../../middleware/limiter");
 
 // Verify Email Address
-router.post("/verify/:token", async (req, res) => {
+router.post("/verify/:token", authLimiter(), async (req, res) => {
   try {
     const { token } = req.params;
 
@@ -34,7 +34,7 @@ router.post("/verify/:token", async (req, res) => {
 router.post(
   "/resend-verification",
   verifyToken,
-  authLimiter,
+  authLimiter(),
   async (req, res) => {
     try {
       const userId = req.user._id;
