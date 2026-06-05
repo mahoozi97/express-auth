@@ -1,15 +1,15 @@
 # express-auth
 
-OAuth 2.0 (Google) + traditional sign up / sign in built with Node.js and Express.
+Google OAuth 2.0 + Local sign up / sign in built with Node.js and Express.
 
 ## Features
 
 * Google OAuth 2.0
-* Traditional sign up / sign in (with email verification)
+* Local sign up / sign in (with email verification)
 * Two-Factor Authentication (2FA): Fully compatible with Google Authenticator.
 * Email notifications via Nodemailer
 * JWT authentication
-* Rate Limiting
+* Rate Limiting (with optional Redis backend for persistent storage)
 
 ## Environment Variables
 
@@ -23,13 +23,15 @@ OAuth 2.0 (Google) + traditional sign up / sign in built with Node.js and Expres
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
 | `EMAIL` | Nodemailer sender email |
 | `PASS` | Nodemailer email password |
+| `USE_REDIS` | Set to `True` if you have Redis installed locally, otherwise leave as `False` |
+| `REDIS_URL` | Redis connection URL (default: `redis://localhost:6379`) |
 
 ## Routes
 
 | Method | Route | Description |
 | --- | --- | --- |
-| POST | `/auth/sign-up` | Traditional sign up |
-| POST | `/auth/sign-in` | Traditional sign in |
+| POST | `/auth/sign-up` | Local sign up |
+| POST | `/auth/sign-in` | Local sign in |
 | POST | `/auth/verify/:token` | Verify email address |
 | POST | `/auth/resend-verification` | Resends verification email (Requires auth)
 | GET | `/auth/google` | Google OAuth |
