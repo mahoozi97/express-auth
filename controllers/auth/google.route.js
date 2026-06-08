@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const User = require("../../models/User");
 const axios = require("axios");
-const crypto = require("crypto")
+const crypto = require("crypto");
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -68,12 +68,22 @@ router.get("/google/callback", async (req, res) => {
 
     const { email, name } = token_info_data;
 
-    let user = await User.findOne({ email }).select("-password");
+    let user = await User.findOne({ email }).select("-password -sharedKey");
+    if (user && user.authProvider !== "google") {
+      return res
+        .status(400)
+        .json({
+          error:
+            "This email is already registered. Please log in with your email and password.",
+        });
+    }
     if (!user) {
-      user = await User.create({ email, username: name });
-      user.isVerified = true;
-      user.authProvider = "google";
-      await user.save();
+      user = await User.create({
+        email,
+        username: name,
+        isVerified: true,
+        authProvider: "google",
+      });
     }
 
     const token = user.generateToken();
