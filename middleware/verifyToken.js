@@ -13,7 +13,6 @@ const verifyToken = (req, res, next) => {
   }
 
   const is2FaRoute = req.path.endsWith("/2fa/verify-login");
-  console.log(is2FaRoute);
 
   const token = req.headers["authorization"]?.split(" ")[1];
 
