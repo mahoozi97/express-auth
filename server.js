@@ -7,6 +7,7 @@ const cors = require("cors");
 require("dotenv").config();
 const PORT = process.env.PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
+const verifyToken = require("./middleware/verifyToken");
 
 // import routes
 const authRoutes = require("./controllers/auth/auth");
@@ -19,6 +20,15 @@ app.use(morgan("dev"));
 
 // Routes
 app.use("/auth", authRoutes);
+
+// dummy protected route
+app.get("/api/verify-auth", verifyToken, (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Template authentication is working!",
+    user: req.user, // Echoing back the verified user data
+  });
+});
 
 app.get("/", (req, res) => {
   res.send(`${mongoose.connection.name} server is running`);

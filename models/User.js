@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    sharedSecret: {
+    sharedKey: {
       type: String,
     },
     authProvider: {
@@ -73,6 +73,8 @@ userSchema.methods.generateToken = function (lifeTime, purpose = "access") {
     payload.username = this.username;
     payload.email = this.email;
     payload.isVerified = this.isVerified;
+    payload.is2FaEnabled = this.is2FaEnabled
+    payload.authProvider = this.authProvider
   }
 
   const token = jwt.sign({ ...payload }, process.env.JWT_SECRET_KEY, {

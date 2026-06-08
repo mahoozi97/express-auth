@@ -19,7 +19,7 @@ router.post("/2fa/generate", verifyToken, authLimiter(), async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (user.sharedSecret) {
+    if (user.sharedKey) {
       return res
         .status(400)
         .json({ error: "2FA is already configured for this user." });
@@ -38,7 +38,7 @@ router.post("/2fa/generate", verifyToken, authLimiter(), async (req, res) => {
 
     // 1. Generate the raw secret
     const secret = generateSecret();
-    user.sharedSecret = encryptSecret(secret);
+    user.sharedKey = encryptSecret(secret);
     await user.save();
 
     // Generate a QR code for the secret
@@ -73,7 +73,7 @@ router.post(
       }
       const user = await User.findById(userId).select("-password");
 
-      if (!user || !user.sharedSecret) {
+      if (!user || !user.sharedKey) {
         return res.status(400).json({ error: "2FA generation required first" });
       }
 
@@ -82,7 +82,7 @@ router.post(
       }
 
       // Decrypt the secret from the database
-      const decryptedSecret = decryptSecret(user.sharedSecret);
+      const decryptedSecret = decryptSecret(user.sharedKey);
 
       // Validate the 6-digit code against the decrypted secret
       const result = await verify({ secret: decryptedSecret, token: passcode });
@@ -119,11 +119,11 @@ router.post(
 
       const user = await User.findById(userId).select("-password");
 
-      if (!user || !user.sharedSecret) {
+      if (!user || !user.sharedKey) {
         return res.status(400).json({ error: "2FA generation required first" });
       }
       // Decrypt the secret from the database
-      const decryptedSecret = decryptSecret(user.sharedSecret);
+      const decryptedSecret = decryptSecret(user.sharedKey);
 
       // Validate the 6-digit code against the decrypted secret
       const result = await verify({ secret: decryptedSecret, token: passcode });
@@ -159,7 +159,7 @@ router.post(
       }
       const user = await User.findById(userId).select("-password");
 
-      if (!user || !user.sharedSecret) {
+      if (!user || !user.sharedKey) {
         return res.status(400).json({ error: "2FA generation required first" });
       }
 
@@ -168,7 +168,7 @@ router.post(
       }
 
       // Decrypt the secret from the database
-      const decryptedSecret = decryptSecret(user.sharedSecret);
+      const decryptedSecret = decryptSecret(user.sharedKey);
 
       // Validate the 6-digit code against the decrypted secret
       const result = await verify({ secret: decryptedSecret, token: passcode });
@@ -178,7 +178,7 @@ router.post(
       }
 
       user.is2FaEnabled = false;
-      user.sharedSecret = null;
+      user.sharedKey = null;
       await user.save();
       console.log("✅ 2FA successfully disabled!");
       res.status(200).json({ message: "2FA successfully disabled!" });
