@@ -12,7 +12,10 @@ router.post("/verify/:token", authLimiter(), async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    const user = await User.findById(decoded._id).select("-password");
+    const user = await User.findById(decoded._id).select(
+      "-password -sharedKey",
+    );
+
     if (!user) {
       return res.status(404).json({ error: "User no longer exists." });
     }
@@ -43,7 +46,9 @@ router.post(
     try {
       const userId = req.user._id;
 
-      const foundUser = await User.findById(userId).select("-password");
+      const foundUser = await User.findById(userId).select(
+        "-password -sharedKey",
+      );
 
       if (!foundUser) {
         return res.status(404).json({ error: "User no longer exists." });

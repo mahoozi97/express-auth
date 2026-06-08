@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    sharedSecret: {
+    sharedKey: {
       type: String,
     },
     authProvider: {
