@@ -34,8 +34,7 @@ Google OAuth 2.0 + Local sign up / sign in built with Node.js and Express.
 | POST | `/auth/sign-in` | Local sign in |
 | POST | `/auth/verify/:token` | Verify email address |
 | POST | `/auth/resend-verification` | Resends verification email (Requires auth)
-| GET | `/auth/google` | Google OAuth |
-| GET | `/auth/google/callback` | Google OAuth callback |
+| POST | `/auth/google/callback` | Google OAuth callback |
 | POST | `/auth/2fa/generate` | Generates 2FA secret and returns QR code string (Requires auth) |
 | POST | `/auth/2fa/verify-setup` | Verifies and completes initial 2FA activation (Requires auth) |
 | POST | `/auth/2fa/verify-login` | Completes login by validating 2FA passcode (Requires temp token) |
