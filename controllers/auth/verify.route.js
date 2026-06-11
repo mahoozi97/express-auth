@@ -26,9 +26,16 @@ router.post("/verify/:token", authLimiter(), async (req, res) => {
 
     user.isVerified = true;
     await user.save();
+    sendEmailVerification(user.email, null, true);
+
+    const newToken = user.generateToken();
 
     console.log("✅ Email verified successfully!");
-    res.json({ success: true, message: "Email verified successfully!" });
+    res.json({
+      success: true,
+      token: newToken,
+      message: "Email verified successfully!",
+    });
   } catch (error) {
     console.error("❌ Failed or jwt expired: ", error);
     res

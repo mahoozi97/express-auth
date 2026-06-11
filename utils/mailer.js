@@ -2,6 +2,8 @@
 
 const nodemailer = require("nodemailer");
 
+const CLIENT_URL = process.env.CLIENT_URL;
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -10,15 +12,30 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmailVerification = (to, token) => {
-  const verificationUrl = `http://localhost:3000/auth/verify/${token}`;
+const sendEmailVerification = (to, token, isVerified = false) => {
+  const verificationUrl = `${CLIENT_URL}/verify/${token}`;
+  let subject, htmlContent;
+
+  if (isVerified) {
+    subject = "Email Verified Successfully!";
+    htmlContent = `
+      <h2>Verification Complete!</h2>
+      <p>Your email address has been successfully verified.</p>
+      <p>You can now fully access all features of the app.</p>
+      <a href="${CLIENT_URL}/profile">Go to your Profile</a>
+    `;
+  } else {
+    subject = "Email Verification";
+    htmlContent = `<h2>Welcome to the app!</h2>
+  <p>Please click the link below to verify your email address:</p>
+  <a href="${verificationUrl}">Click here to verify your email</a>`;
+  }
+
   const mailOptions = {
     from: process.env.EMAIL,
     to: to,
-    subject: "Email Verification",
-    html: `<h2>Welcome to the app!</h2>
-  <p>Please click the link below to verify your email address:</p>
-  <a href="${verificationUrl}">Click here to verify your email</a>`,
+    subject: subject,
+    html: htmlContent,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
