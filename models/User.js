@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema(
       enum: ["local", "google"],
       default: "local",
     },
+    profilePicture: {
+      type: String,
+      default: "https://api.dicebear.com/9.x/identicon/svg?seed=placeholder",
+    },
   },
   { timestamps: true },
 );
@@ -73,8 +77,9 @@ userSchema.methods.generateToken = function (lifeTime, purpose = "access") {
     payload.username = this.username;
     payload.email = this.email;
     payload.isVerified = this.isVerified;
-    payload.is2FaEnabled = this.is2FaEnabled
-    payload.authProvider = this.authProvider
+    payload.is2FaEnabled = this.is2FaEnabled;
+    payload.authProvider = this.authProvider;
+    payload.profilePicture = this.profilePicture;
   }
 
   const token = jwt.sign({ ...payload }, process.env.JWT_SECRET_KEY, {
