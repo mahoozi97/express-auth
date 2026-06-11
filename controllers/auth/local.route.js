@@ -61,6 +61,13 @@ router.post("/sign-in", authLimiter(), async (req, res) => {
       return res.status(400).json({ error: "email or password incorrect" });
     }
 
+    if (foundUser.authProvider !== "local") {
+      return res.status(400).json({
+        error: `This account was created using ${foundUser.authProvider}. Please sign in with ${foundUser.authProvider} instead.`,
+        authProvider: foundUser.authProvider,
+      });
+    }
+
     const validPassword = await bcrypt.compare(password, foundUser.password);
 
     if (!validPassword) {
