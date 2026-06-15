@@ -45,7 +45,6 @@ const userSchema = new mongoose.Schema(
     },
     profilePicture: {
       type: String,
-      default: "https://api.dicebear.com/9.x/identicon/svg?seed=placeholder",
     },
   },
   { timestamps: true },
@@ -70,6 +69,11 @@ userSchema.methods.generateToken = function (lifeTime, purpose = "access") {
     _id: this._id,
     purpose,
   };
+
+  if (purpose == "2fa") {
+    payload.role = this.role;
+    payload.is2FaEnabled = this.is2FaEnabled;
+  }
 
   // Sign-in tokens also need basic profile data for the frontend
   if (purpose === "access") {

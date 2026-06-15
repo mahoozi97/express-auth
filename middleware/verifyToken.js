@@ -17,30 +17,33 @@ const verifyToken = (req, res, next) => {
   const token = req.headers["authorization"]?.split(" ")[1];
 
   if (!token) {
-    return res
-      .status(401)
-      .json({ message: "Access Denied. No token provided" });
+    return res.status(401).json({ error: "Access Denied. No token provided" });
   }
 
   jwt.verify(token, JWT_SECRET_KEY, (err, user) => {
     if (err) {
-      return res.status(403).json({ message: "Invalid credientials" });
+      return res.status(403).json({ error: "Invalid credientials" });
     }
 
     if (user.purpose === "2fa" && !is2FaRoute) {
       return res.status(403).json({
-        message: "Access Denied. Please complete your 2FA verification first.",
+        error: "Access Denied. Please complete your 2FA verification first.",
       });
     }
 
-    // reject temporrary tokens carrying a role
-    if (user.purpose !== "access" && user.role) {
-      return res.status(403).json({ message: "Token conflict." });
+    if (user.purpose === "access" && is2FaRoute) {
+      return res.status(400).json({
+        error: "Already authenticated. 2FA not required.",
+      });
     }
 
     // reject access tokens missing their role
     if (user.purpose === "access" && !user.role) {
-      return res.status(403).json({ message: "Token incomplete." });
+      return res.status(403).json({ error: "Token incomplete." });
+    }
+
+    if (user.purpose !== "2fa" && user.purpose !== "access") {
+      return res.status(403).json({ error: "Invalid token purpose." });
     }
 
     req.user = user;
