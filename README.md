@@ -6,7 +6,7 @@ Google OAuth 2.0 + Local sign up / sign in built with Node.js and Express.
 
 * Google OAuth 2.0
 * Local sign up / sign in (with email verification)
-* Two-Factor Authentication (2FA): Fully compatible with Google Authenticator.
+* 2FA via any Authenticator App (Google, Microsoft, Authy, etc.)
 * Email notifications via Nodemailer
 * JWT authentication
 * Rate Limiting (with optional Redis backend for persistent storage)
