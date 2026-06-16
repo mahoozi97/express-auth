@@ -12,7 +12,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmailVerification = (to, token, isVerified = false) => {
+const sendEmailVerification = (to, token, isVerified = false, role = null) => {
+  const path = role === "user" ? "profile" : "admin-profile";
   const verificationUrl = `${CLIENT_URL}/verify/${token}`;
   let subject, htmlContent;
 
@@ -22,7 +23,7 @@ const sendEmailVerification = (to, token, isVerified = false) => {
       <h2>Verification Complete!</h2>
       <p>Your email address has been successfully verified.</p>
       <p>You can now fully access all features of the app.</p>
-      <a href="${CLIENT_URL}/profile">Go to your Profile</a>
+      <a href="${CLIENT_URL}/${path}">Go to your Profile</a>
     `;
   } else {
     subject = "Email Verification";
