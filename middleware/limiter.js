@@ -12,7 +12,7 @@ if (USE_REDIS === "True") {
   });
 }
 
-const authLimiter = (customMax = 3) => {
+const authLimiter = (customMax = 50) => {
   const limiterOptions = {
     windowMs: 10 * 60 * 1000,
     max: customMax,

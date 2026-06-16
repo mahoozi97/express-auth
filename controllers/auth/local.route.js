@@ -80,7 +80,7 @@ router.post("/sign-in", authLimiter(), async (req, res) => {
       return res.status(200).json({
         requires2FA: true,
         message: "Please submit your 6-digit code.",
-        tempToken: tempToken,
+        token: tempToken,
       });
     }
 

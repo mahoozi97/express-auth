@@ -26,7 +26,7 @@ router.post("/verify/:token", authLimiter(), async (req, res) => {
 
     user.isVerified = true;
     await user.save();
-    sendEmailVerification(user.email, null, true);
+    sendEmailVerification(user.email, null, true, user.role);
 
     const newToken = user.generateToken();
 
