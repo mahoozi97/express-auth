@@ -209,38 +209,41 @@ router.post(
   },
 );
 
-router.post("/2fa/reset-request", verifyToken, async (req, res) => {
-  try {
-    const userId = req.user._id;
+router.post(
+  "/2fa/reset-request",
+  verifyToken,
+  authLimiter(),
+  async (req, res) => {
+    try {
+      const userId = req.user._id;
 
-    const foundUser = await User.findById(userId).select(
-      "-password -sharedKey",
-    );
+      const user = await User.findById(userId).select("-password -sharedKey");
 
-    if (!foundUser) {
-      return res.status(404).json({ error: "User no longer exists." });
+      if (!user) {
+        return res.status(404).json({ error: "User no longer exists." });
+      }
+
+      if (!user.is2FaEnabled) {
+        return res.status(400).json({
+          error: "Two-Factor Authentication is not enabled for this account.",
+        });
+      }
+
+      const token = user.generateToken("5m", "2fa-reset");
+      send2FaResetEmail(user.email, token);
+
+      console.log("✅ 2FA reset email sent");
+      res
+        .status(200)
+        .json({ message: "A 2FA reset link has been sent to your email." });
+    } catch (error) {
+      console.log("❌ Failed to send 2FA reset email: ", error);
+      res.status(500).json({ error: error.message });
     }
+  },
+);
 
-    if (!foundUser.is2FaEnabled) {
-      return res.status(400).json({
-        error: "Two-Factor Authentication is not enabled for this account.",
-      });
-    }
-
-    const token = foundUser.generateToken("5m", "2fa-reset");
-    send2FaResetEmail(foundUser.email, token);
-
-    console.log("✅ 2FA reset email sent");
-    res
-      .status(200)
-      .json({ message: "A 2FA reset link has been sent to your email." });
-  } catch (error) {
-    console.log("❌ Failed to send 2FA reset email: ", error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.post("/2fa/reset/:token", async (req, res) => {
+router.post("/2fa/reset/:token", authLimiter(), async (req, res) => {
   try {
     const token = req.params.token;
 
@@ -251,6 +254,13 @@ router.post("/2fa/reset/:token", async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User no longer exists." });
     }
+
+    if (!user.is2FaEnabled) {
+      return res.status(400).json({
+        error: "Two-Factor Authentication is not enabled for this account.",
+      });
+    }
+
     user.is2FaEnabled = false;
     user.sharedKey = "";
     await user.save();
