@@ -2,10 +2,16 @@ const router = require("express").Router();
 const User = require("../../models/User");
 const verifyToken = require("../../middleware/verifyToken");
 const authLimiter = require("../../middleware/limiter");
+const jwt = require("jsonwebtoken");
 
 const { generateSecret, generateURI, verify } = require("otplib");
 const QRCode = require("qrcode");
 const { encryptSecret, decryptSecret } = require("../../utils/helper");
+const {
+  send2FaResetEmail,
+  send2FaDisabledEmail,
+  send2FaEnabledEmail,
+} = require("../../utils/mailer");
 
 //  - - - - - - - -  - - - -- - 2FA AUTHENTICATION - - - - - - - - -  -- - - - - -
 
@@ -94,6 +100,8 @@ router.post(
       user.is2FaEnabled = true;
       await user.save();
 
+      send2FaEnabledEmail(user.email, user.role);
+
       // refresh token
       const token = user.generateToken();
       console.log("✅ 2FA successfully enabled!");
@@ -136,7 +144,7 @@ router.post(
       if (!result.valid) {
         return res.status(400).json({ error: "Invalid 2FA code" });
       }
-      
+
       // refresh token
       const token = user.generateToken();
 
@@ -187,6 +195,8 @@ router.post(
       user.sharedKey = null;
       await user.save();
 
+      send2FaDisabledEmail(user.email);
+
       // refresh token
       const token = user.generateToken();
 
@@ -198,5 +208,64 @@ router.post(
     }
   },
 );
+
+router.post("/2fa/reset-request", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const foundUser = await User.findById(userId).select(
+      "-password -sharedKey",
+    );
+
+    if (!foundUser) {
+      return res.status(404).json({ error: "User no longer exists." });
+    }
+
+    if (!foundUser.is2FaEnabled) {
+      return res.status(400).json({
+        error: "Two-Factor Authentication is not enabled for this account.",
+      });
+    }
+
+    const token = foundUser.generateToken("5m", "2fa-reset");
+    send2FaResetEmail(foundUser.email, token);
+
+    console.log("✅ 2FA reset email sent");
+    res
+      .status(200)
+      .json({ message: "A 2FA reset link has been sent to your email." });
+  } catch (error) {
+    console.log("❌ Failed to send 2FA reset email: ", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/2fa/reset/:token", async (req, res) => {
+  try {
+    const token = req.params.token;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    const user = await User.findById(decoded._id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ error: "User no longer exists." });
+    }
+    user.is2FaEnabled = false;
+    user.sharedKey = "";
+    await user.save();
+
+    send2FaDisabledEmail(user.email);
+
+    console.log("✅ 2FA reset successfully");
+    res.json({
+      success: true,
+      message: "2FA has been reset successfully.",
+    });
+  } catch (error) {
+    console.log("❌ Failed to reset 2FA: ", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;
