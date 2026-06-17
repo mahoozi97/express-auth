@@ -1,9 +1,9 @@
 const router = require("express").Router();
 const User = require("../../models/User");
-const sendEmailVerification = require("../../utils/mailer");
 const jwt = require("jsonwebtoken");
 const verifyToken = require("../../middleware/verifyToken");
 const authLimiter = require("../../middleware/limiter");
+const { sendEmailVerification } = require("../../utils/mailer");
 
 // Verify Email Address
 router.post("/verify/:token", authLimiter(), async (req, res) => {
@@ -38,9 +38,13 @@ router.post("/verify/:token", authLimiter(), async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Failed or jwt expired: ", error);
-    res
-      .status(400)
-      .json({ success: false, error: "Link is invalid or has expired." });
+    if (error.message === "jwt expired") {
+      res
+        .status(400)
+        .json({ success: false, error: "Link is invalid or has expired." });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
