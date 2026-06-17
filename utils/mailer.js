@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmailVerification = (to, token, isVerified = false, role = null) => {
+const sendEmailVerification = (to, token, isVerified = false, role) => {
   const path = role === "user" ? "profile" : "admin-profile";
   const verificationUrl = `${CLIENT_URL}/verify/${token}`;
   let subject, htmlContent;
@@ -65,7 +65,7 @@ const send2FaEnabledEmail = (to, role) => {
     if (error) {
       console.error("❌ Failed to send 2FA enable email:", error);
     } else {
-      console.log("✅ 2FA enable email sent:", info.response);
+      console.log("✅ 2FA enabled email sent:", info.response);
     }
   });
 };
@@ -87,7 +87,7 @@ const send2FaDisabledEmail = (to) => {
     if (error) {
       console.error("❌ Failed to send 2FA disable email:", error);
     } else {
-      console.log("✅ 2FA disable email sent:", info.response);
+      console.log("✅ 2FA disabled email sent:", info.response);
     }
   });
 };
@@ -119,9 +119,70 @@ const send2FaResetEmail = (to, token) => {
   });
 };
 
+const sendResetPasswordEmail = (to, token) => {
+  const resetPasswordUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
+
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: to,
+    subject: "Reset your password",
+    html: `
+      <div>
+        <h2>Reset Your Password</h2>
+        <p>We received a request to reset the password for your account.</p>
+        <p>Click the button below to choose a new password. This link will expire shortly.</p>
+        
+        <p> <a href="${resetPasswordUrl}"> Reset Password </a> </p>
+        
+        <p><small>If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.</small></p>
+      </div>
+    `,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("❌ Failed to send password reset email:", error);
+    } else {
+      console.log("✅ Password reset email sent:", info.response);
+    }
+  });
+};
+
+const sendResetSuccessEmail = (to) => {
+  const loginUrl = `${process.env.CLIENT_URL}/sign-in`;
+
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: to,
+    subject: "Security Update: Your password has been changed",
+    html: `
+      <div>
+        <h2>Password Updated Successfully</h2>
+        <p>This is a quick confirmation that the password for your account was just changed.</p>
+        <p>You can now log in to your account using your new password:</p>
+        
+        <p> <a href="${loginUrl}"> Log In Now </a> </p>
+        
+        <hr />
+        <p><small><strong>Security Alert:</strong> If you did not make this change, your account may be compromised. Please reset your password immediately and contact our support team.</small></p>
+      </div>
+    `,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("❌ Failed to send password success email:", error);
+    } else {
+      console.log("✅ Password success email sent:", info.response);
+    }
+  });
+};
+
 module.exports = {
   sendEmailVerification,
   send2FaEnabledEmail,
   send2FaDisabledEmail,
   send2FaResetEmail,
+  sendResetPasswordEmail,
+  sendResetSuccessEmail
 };

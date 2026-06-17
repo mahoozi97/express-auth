@@ -56,13 +56,6 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-userSchema.pre("findOneAndUpdate", async function () {
-  const update = this.getUpdate();
-  if (update.password) {
-    update.password = await bcrypt.hash(update.password, 10);
-  }
-});
-
 userSchema.methods.generateToken = function (lifeTime, purpose = "access") {
   // All tokens need the User ID and token type
   const payload = {
