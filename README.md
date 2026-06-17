@@ -4,12 +4,14 @@ Google OAuth 2.0 + Local sign up / sign in built with Node.js and Express.
 
 ## Features
 
-* Google OAuth 2.0
-* Local sign up / sign in (with email verification)
-* 2FA via any Authenticator App (Google, Microsoft, Authy, etc.)
-* Email notifications via Nodemailer
-* JWT authentication
-* Rate Limiting (with optional Redis backend for persistent storage)
+- Google OAuth 2.0 — Google Sign-In support
+- Local Auth — Sign up and sign in with email verification
+- Password Reset — Reset via a signed token link
+- 2FA via any Authenticator App (Google, Microsoft, Authy, etc.)
+- 2FA Management — Enable, disable, and reset via a signed token link
+- Email Notifications — Sends notifications for key account events via Nodemailer
+- JWT authentication — Role-based access with dedicated tokens per flow
+- Rate Limiting — With optional Redis backend for persistent storage
 
 ## Environment Variables
 
@@ -25,6 +27,7 @@ Google OAuth 2.0 + Local sign up / sign in built with Node.js and Express.
 | `PASS` | Nodemailer email password |
 | `USE_REDIS` | Set to `True` if you have Redis installed locally, otherwise leave as `False` |
 | `REDIS_URL` | Redis connection URL (default: `redis://localhost:6379`) |
+| `CLIENT_URL` | Frontend base URL for CORS and building redirect links in emails |
 
 ## Routes
 
@@ -41,6 +44,9 @@ Google OAuth 2.0 + Local sign up / sign in built with Node.js and Express.
 | POST | `/auth/2fa/verify-disable`| Validates passcode and removes 2FA from account (Requires auth) |
 | POST | `/auth/2fa/reset-request`| Generates a secure token and sends a 2FA reset link to the user's email (Requires auth) |
 | POST | `/auth/2fa/reset/:token`| Validates the email token, permanently disables 2FA for the account |
+| POST | `/auth/forgot-password` | Request a password reset link |
+| POST | `/auth/reset-password/:token` | Verify reset token and authorize password change |
+| POST | `/auth/reset-password` | Submit new password |
 
 ## Project Setup
 

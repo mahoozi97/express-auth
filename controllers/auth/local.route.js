@@ -138,7 +138,7 @@ router.post("/forgot-password", authLimiter(), async (req, res) => {
       });
     }
 
-    const token = foundUser.generateToken("5m", "reset-password");
+    const token = foundUser.generateToken("5m", "password-reset");
     sendResetPasswordEmail(foundUser.email, token);
 
     console.log("✅ Password reset email sent successfully");
@@ -166,7 +166,7 @@ router.post("/reset-password/:token", authLimiter(), async (req, res) => {
       return res.status(404).json({ error: "User no longer exists." });
     }
 
-    const newToken = foundUser.generateToken("5m", "reset-password");
+    const newToken = foundUser.generateToken("5m", "password-reset");
 
     console.log("✅ Reset token verified successfully");
     res.json({

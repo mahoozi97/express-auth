@@ -7,6 +7,7 @@ const cors = require("cors");
 require("dotenv").config();
 const PORT = process.env.PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
+const CLIENT_URL = process.env.CLIENT_URL
 const verifyToken = require("./middleware/verifyToken");
 
 // import routes
@@ -16,7 +17,7 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(morgan("dev"));
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: CLIENT_URL }));
 
 // Routes
 app.use("/auth", authRoutes);
