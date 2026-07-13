@@ -13,9 +13,20 @@ const authLimiter = require("../../middleware/limiter");
 
 // - - - - - - - - - - - - - SIGN UP / SIGN IN - - - - - - - - - - - - - -
 
+// Regex to detect any Arabic characters
+const containsArabic = (text) => /\p{Script=Arabic}/u.test(text);
+
 router.post("/sign-up", authLimiter(), async (req, res) => {
   try {
     const { email, password, username } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ error: "Username is required" });
+    }
+
+    if (containsArabic(username)) {
+      return res.status(400).json({ error: "Username must be in English" });
+    }
 
     if (!validator.isEmail(email)) {
       return res.status(400).json({ error: "Please enter a valid email" });
@@ -177,7 +188,13 @@ router.post("/reset-password/:token", authLimiter(), async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Failed to verify reset token: ", error);
-    res.status(500).json({ error: error.message });
+    if (error.message === "jwt expired") {
+      res
+        .status(400)
+        .json({ success: false, error: "Link is invalid or has expired." });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
@@ -221,7 +238,13 @@ router.post("/reset-password", authLimiter(), async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Failed to update password: ", error);
-    res.status(500).json({ error: error.message });
+    if (error.message === "jwt expired") {
+      res
+        .status(400)
+        .json({ success: false, error: "Temporary token has expired." });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
