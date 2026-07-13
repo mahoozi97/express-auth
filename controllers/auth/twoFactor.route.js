@@ -274,7 +274,13 @@ router.post("/2fa/reset/:token", authLimiter(), async (req, res) => {
     });
   } catch (error) {
     console.log("❌ Failed to reset 2FA: ", error);
-    res.status(500).json({ error: error.message });
+    if (error.message === "jwt expired") {
+      res
+        .status(400)
+        .json({ success: false, error: "Link is invalid or has expired." });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
