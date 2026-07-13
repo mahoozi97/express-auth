@@ -32,25 +32,25 @@ const sendEmailVerification = (to, token, isVerified = false, role) => {
   <a href="${verificationUrl}">Click here to verify your email</a>`;
   }
 
-  const mailOptions = {
+  return {
     from: process.env.EMAIL,
     to: to,
     subject: subject,
     html: htmlContent,
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error("Failed to send email:", error);
-    } else {
-      console.log("Email sent:", info.response);
-    }
-  });
+  // transporter.sendMail(mailOptions, (error, info) => {
+  //   if (error) {
+  //     console.error("Failed to send email:", error);
+  //   } else {
+  //     console.log("Email sent:", info.response);
+  //   }
+  // });
 };
 
 const send2FaEnabledEmail = (to, role) => {
   const path = role === "user" ? "profile" : "admin-profile";
-  const mailOptions = {
+  return {
     from: process.env.EMAIL,
     to: to,
     subject: "Security Update: Two-Factor Authentication Enabled",
@@ -60,18 +60,10 @@ const send2FaEnabledEmail = (to, role) => {
       <p><a href="${process.env.CLIENT_URL}/${path}">Go to your Profile</a></p>
     `,
   };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error("❌ Failed to send 2FA enable email:", error);
-    } else {
-      console.log("✅ 2FA enabled email sent:", info.response);
-    }
-  });
 };
 
 const send2FaDisabledEmail = (to) => {
-  const mailOptions = {
+  return {
     from: process.env.EMAIL,
     to: to,
     subject: "Security Alert: Two-Factor Authentication Disabled",
@@ -82,20 +74,12 @@ const send2FaDisabledEmail = (to) => {
       <p><strong>Didn't do this?</strong> If you did not disable 2FA, please secure your account and contact support immediately.</p>
     `,
   };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error("❌ Failed to send 2FA disable email:", error);
-    } else {
-      console.log("✅ 2FA disabled email sent:", info.response);
-    }
-  });
 };
 
 const send2FaResetEmail = (to, token) => {
   const reset2FaUrl = `${process.env.CLIENT_URL}/2fa-reset/${token}`;
 
-  const mailOptions = {
+  return {
     from: process.env.EMAIL,
     to: to,
     subject: "Action Required: 2FA Reset Request",
@@ -109,20 +93,12 @@ const send2FaResetEmail = (to, token) => {
       <p><small>If you did not request this, please ignore this email. Your account remains secure.</small></p>
     `,
   };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error("❌ Failed to send 2FA reset email:", error);
-    } else {
-      console.log("✅ 2FA reset email sent:", info.response);
-    }
-  });
 };
 
 const sendResetPasswordEmail = (to, token) => {
   const resetPasswordUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
 
-  const mailOptions = {
+  return {
     from: process.env.EMAIL,
     to: to,
     subject: "Reset your password",
@@ -138,20 +114,12 @@ const sendResetPasswordEmail = (to, token) => {
       </div>
     `,
   };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error("❌ Failed to send password reset email:", error);
-    } else {
-      console.log("✅ Password reset email sent:", info.response);
-    }
-  });
 };
 
 const sendResetSuccessEmail = (to) => {
   const loginUrl = `${process.env.CLIENT_URL}/sign-in`;
 
-  const mailOptions = {
+  return {
     from: process.env.EMAIL,
     to: to,
     subject: "Security Update: Your password has been changed",
@@ -168,21 +136,14 @@ const sendResetSuccessEmail = (to) => {
       </div>
     `,
   };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error("❌ Failed to send password success email:", error);
-    } else {
-      console.log("✅ Password success email sent:", info.response);
-    }
-  });
 };
 
 module.exports = {
+  transporter,
   sendEmailVerification,
   send2FaEnabledEmail,
   send2FaDisabledEmail,
   send2FaResetEmail,
   sendResetPasswordEmail,
-  sendResetSuccessEmail
+  sendResetSuccessEmail,
 };

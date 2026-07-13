@@ -3,7 +3,7 @@ const User = require("../../models/User");
 const jwt = require("jsonwebtoken");
 const verifyToken = require("../../middleware/verifyToken");
 const authLimiter = require("../../middleware/limiter");
-const { sendEmailVerification } = require("../../utils/mailer");
+const { sendEmailVerification, transporter } = require("../../utils/mailer");
 
 // Verify Email Address
 router.post("/verify/:token", authLimiter(), async (req, res) => {
@@ -26,11 +26,12 @@ router.post("/verify/:token", authLimiter(), async (req, res) => {
 
     user.isVerified = true;
     await user.save();
-    sendEmailVerification(user.email, null, true, user.role);
+    const mailOption = sendEmailVerification(user.email, null, true, user.role);
+    const info = await transporter.sendMail(mailOption);
 
     const newToken = user.generateToken();
 
-    console.log("✅ Email verified successfully!");
+    console.log("✅ Email verified successfully!: ", info.response);
     res.json({
       success: true,
       token: newToken,
@@ -72,9 +73,10 @@ router.post(
       }
 
       const token = foundUser.generateToken("10m", "email-verification");
-      sendEmailVerification(foundUser.email, token);
+      const mailOption = sendEmailVerification(foundUser.email, token);
+      const info = await transporter.sendMail(mailOption);
 
-      console.log("✅ Email verification sent successfully");
+      console.log("✅ Email verification sent successfully: ", info.response);
       res.status(200).json({ message: "Email verification sent successfully" });
     } catch (error) {
       console.log("❌ Send email verification failed: ", error);
