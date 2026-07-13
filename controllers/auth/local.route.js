@@ -8,6 +8,7 @@ const {
   sendEmailVerification,
   sendResetPasswordEmail,
   sendResetSuccessEmail,
+  transporter,
 } = require("../../utils/mailer");
 const authLimiter = require("../../middleware/limiter");
 
@@ -54,7 +55,10 @@ router.post("/sign-up", authLimiter(), async (req, res) => {
 
     // email verification
     const token = createdUser.generateToken("10m", "email-verification");
-    sendEmailVerification(createdUser.email, token);
+    const mailOption = sendEmailVerification(createdUser.email, token);
+
+    const info = await transporter.sendMail(mailOption);
+    console.log("🟢 Verification email sent:", info.response)
 
     // change to object and delete the password
     const { password: _password, ...userObject } = createdUser.toObject();
@@ -150,9 +154,10 @@ router.post("/forgot-password", authLimiter(), async (req, res) => {
     }
 
     const token = foundUser.generateToken("5m", "password-reset");
-    sendResetPasswordEmail(foundUser.email, token);
+    const mailOption = sendResetPasswordEmail(foundUser.email, token);
+    const info = await transporter.sendMail(mailOption);
 
-    console.log("✅ Password reset email sent successfully");
+    console.log("✅ Password reset email sent:", info.response);
     res.status(200).json({
       success: true,
       message: "A password reset link has been sent to your email.",
@@ -229,9 +234,11 @@ router.post("/reset-password", authLimiter(), async (req, res) => {
     foundUser.password = password;
     await foundUser.save();
 
-    sendResetSuccessEmail(foundUser.email);
+    const mailOption = sendResetSuccessEmail(foundUser.email);
 
-    console.log("✅ Password updated successfully.");
+    const info = await transporter.sendMail(mailOption);
+
+    console.log("✅ Password updated successfully:", info.response);
     res.json({
       success: true,
       message: "Your password has been successfully reset.",

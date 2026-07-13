@@ -11,6 +11,7 @@ const {
   send2FaResetEmail,
   send2FaDisabledEmail,
   send2FaEnabledEmail,
+  transporter,
 } = require("../../utils/mailer");
 
 //  - - - - - - - -  - - - -- - 2FA AUTHENTICATION - - - - - - - - -  -- - - - - -
@@ -230,9 +231,10 @@ router.post(
       }
 
       const token = user.generateToken("5m", "2fa-reset");
-      send2FaResetEmail(user.email, token);
+      const mailOption = send2FaResetEmail(user.email, token);
+      const info = await transporter.sendMail(mailOption);
 
-      console.log("✅ 2FA reset email sent");
+      console.log("✅ 2FA reset email sent: ", info.response);
       res
         .status(200)
         .json({ message: "A 2FA reset link has been sent to your email." });
@@ -265,9 +267,10 @@ router.post("/2fa/reset/:token", authLimiter(), async (req, res) => {
     user.sharedKey = "";
     await user.save();
 
-    send2FaDisabledEmail(user.email);
+    const mailOption = send2FaDisabledEmail(user.email);
+    const info = await transporter.sendMail(mailOption);
 
-    console.log("✅ 2FA reset successfully");
+    console.log("✅ 2FA reset successfully: ", info.response);
     res.json({
       success: true,
       message: "2FA has been reset successfully.",
